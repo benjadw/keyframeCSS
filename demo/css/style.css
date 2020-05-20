@@ -24,3 +24,10 @@ span{
 p{
     margin-bottom: 5000px;
 }
+
+main>div>div{
+    height: 30vh;
+    width: 100%;
+    box-shadow: 0 5px 5px 10px rgba(0,0,0,.2);
+}
+
