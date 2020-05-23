@@ -7,74 +7,31 @@
 // Desde el punto de vista de los keyframes, el tiempo sería la posición en el scroll.
 
 
-// Example use:
 
-// // Add this code to another script
 
-// exampleElement = document.querySelector('#exampleElement'); // Get the elements to add keyframes to
-// exampleElement2 = document.querySelector('#exampleElement2');
 
-// var keyframes = new Keyframes({
-//   size: 8000, // Set de min-height to the body
-//   timeType: 'pixels', // Set keyframes time unit ('pixels', 'percent')
+// TODO: 
+
+// -QUE PASA CON BORDER (TIENE COLOR Y PIXELS EN LA MISMA PROPIEDAD)
+
+// MODEL options: 
+// {
+//   size?: number; // Set de min-height to the body
+//   timeType?: string; // Set keyframes time unit ('pixels', 'percent')
 //   elementKeyframes: [ // list of elements with keyframes
 //       {
-//           element: exampleElement, // Add an html element
+//           element: HTMLElement; // Add an html element
+//           elementOffset?: HTMLElement;
+//
 //           keyframeList: [ // List of keyframes for this element
 //               {
-//                   time: 1000, // Time the keyframe is set
-//                   top: '200px',// style rules like you use in javascript
-//                   color: '#ffffff',
-//                   left: '200px'
-
-//               },
-//               {
-//                   time: 3000,
-//                   top: '100px',
-//                   left: '500px',
-//                   background: '#771199'
-
-//               },
-//               {
-//                   time: 1500,
-//                   top: '300px',
-//                   color: '#333333',
-//                   background: '#000000'
-//                   // left: 500
-
-//               }
-//           ]
-//       },
-//       {
-//           element: exampleElement2,
-//           keyframeList: [
-//               {
-//                   time: 0,
-//                   top: '200px',
-//                   color: '#4590ff',
-//                   left: '0',
-//                   transform: 'rotate(0)'
-
-//               },
-//               {
-//                   time: 3000,
-//                   top: '100px',
-//                   left: '200px',
-//                   background: '#ff0077',
-//                   transform: 'rotate(300deg)'
-
-
-//               },
-//               {
-//                   time: 1500,
-//                   top: '800px',
-//                   color: '#333333',
-//                   background: '#000000'
+//                   time: number; // Time the keyframe is set
+//                   [ruleStyleName]: string;// style rules like you use in javascript
 //               }
 //           ]
 //       }
 //   ]
-// });
+// };
 
 var Keyframes = function (options) {
   "use strict";
@@ -97,7 +54,7 @@ var Keyframes = function (options) {
     });
   }
 
-  // Transforma las posiciones de los keyframes de porcentaje a píxeles
+  // Transforma las posiciones de los keyframes (time) de porcentaje a píxeles
   this.parseTimeUnit = function () {
     let extraTimeBottomTimeLine = 0;
     let noPercent = 0;
@@ -122,7 +79,7 @@ var Keyframes = function (options) {
         elementOffsetExtraTime = 0;
       }
       keyframe.keyframeList.forEach((keyframeItem, j) => {
-        keyframeItem.time = (noPixels * (this.elementKeyframesCopy[i].keyframeList[j].time + extraTimeBottomTimeLine + elementOffsetExtraTime)) + (noPercent * (extraTimeBottomTimeLine + elementOffsetExtraTime + (document.body.scrollHeight * this.elementKeyframesCopy[i].keyframeList[j].time / 100)));
+        keyframeItem.time = (noPixels * (this.elementKeyframesCopy[i].keyframeList[j].time + extraTimeBottomTimeLine + elementOffsetExtraTime)) + (noPercent * (extraTimeBottomTimeLine + elementOffsetExtraTime + ((document.body.scrollHeight - window.innerHeight) * this.elementKeyframesCopy[i].keyframeList[j].time / 100)));
       });
     });
   }
@@ -139,6 +96,152 @@ var Keyframes = function (options) {
   }
 
 
+
+  // Obtiene toda la información posible que se pueda calcular y la añade en el objeto original. Así se reducen todas las operaciones posibles en el scroll
+
+  //Modelo de keyframeItem (uno de los keyframes del elemento html):
+
+  // {
+  //   ...
+  //   nextTime: number;
+  //   preCalcs: [
+  //     {
+  //       hasNextKeyframe: boolean;
+  //       noChangeValue: boolean;
+  //       multipleValue: boolean;
+  //       isColorValue: boolean;
+  //       totalFramesAnimation: number;
+  //       startTime: Number;
+  //       nextTime: Number;
+  //       propName: String;
+  //       startTime: number;
+  //       values: [
+  //         {
+  //           hasNumberValue: boolean;
+  //           isColor: boolean;
+  //           startValue: number;
+  //           unitSelected: string;
+  //           valueIncrement: number;
+  //         }
+  //       ]
+  //     }
+  //   ]
+  // }
+  this.addCalculateRating = function () {
+    let propsArrayTemp = [];
+    this.elementKeyframes.forEach(keyframe => {
+      keyframe.keyframeList.forEach(keyframe => { propsArrayTemp.push(...Object.keys(keyframe).filter(prop => !propsArrayTemp.includes(prop) && prop != 'time'&& prop != 'nextTime'&& prop != 'preCalcs')) });
+      keyframe.keyframeList.forEach((keyframeItem, i) => {
+        let startPointIndex;
+        let endPointIndex;
+        if (keyframe.keyframeList.length > i + 1) {
+          keyframeItem.nextTime = keyframe.keyframeList[i + 1].time;
+        }
+
+        keyframeItem.preCalcs = [];
+        propsArrayTemp.forEach(k => {
+          let totalFramesAnimation = null; // Número total de frames de la animación
+          let precalcObj = { propName: k };
+          startPointIndex = this.getStartPointIndex(keyframe.keyframeList, k, keyframeItem.time);
+          endPointIndex = this.getEndPointIndex(keyframe.keyframeList, k, keyframeItem.time);
+
+
+          // Se comprueba si esta propiedad de estilo en este momento del scroll tiene keyframes inicial y final
+          if (endPointIndex !== -1 && startPointIndex !== undefined && startPointIndex !== -1) {
+            precalcObj.hasNextKeyframe = true;
+            precalcObj.startTime = keyframe.keyframeList[startPointIndex].time;
+            precalcObj.nextTime = keyframe.keyframeList[endPointIndex].time;
+            // Se obtiene el valor de la propiedad de los keyframes incial y final
+            const startData2 = eval('keyframe.keyframeList[startPointIndex].' + k);
+            const endData = eval('keyframe.keyframeList[endPointIndex].' + k);
+
+            // Se evitan cálculos innecesarios si el valor inicial y final de la animación son iguales
+            if (startData2 === endData) {
+              precalcObj.noChangeValue = true;
+              precalcObj.initialValue = startData2;
+
+              eval('keyframe.element.style.' + k + '= startData2');
+            } else {
+              precalcObj.noChangeValue = false;
+              const startMultipleData = startData2.split(' '); // Con esta constante se comprueba si hay más de un valor
+              const endMultipleData = endData.split(' ');
+
+              totalFramesAnimation = keyframe.keyframeList[endPointIndex]?.time - keyframe.keyframeList[startPointIndex]?.time; // Tiempo total del intervalo de animación
+              precalcObj.totalFramesAnimation = totalFramesAnimation;
+              // Se comprueba si hay más de un valor para la regla de estilo (por ejemplo, transform: rotate(90deb) scale(1.5))
+              if (startMultipleData.length > 1) {
+                precalcObj.multipleValue = true;
+              } else {
+                precalcObj.multipleValue = false;
+              }
+
+              precalcObj.values = [];
+
+              // Se realizan los cálculos oportunos para cada valor de la regla de estilo !! importante que los valores estén en el mismo orden en los keyframes
+              startMultipleData.forEach((singleStartData, i) => {
+                // Se obtiene la parte no númerica del valor de la propiedad de los keyframes incial y final
+                const startUnit = singleStartData.replace(/\d|\./gi, '');
+                const endUnit = endMultipleData[i].replace(/\d|\./gi, '');
+                // Se obtiene el valor numérico de la propiedad de los keyframes incial y final
+                const startValueStr = singleStartData.replace(/[a-zA-Z]|#|\(|\)|\%/gi, '');
+                const endValueStr = endMultipleData[i].replace(/[a-zA-Z]|#|\(|\)|\%/gi, '');
+
+                let startValue = +startValueStr;
+                let endValue = +endValueStr;
+
+                let unitSelected = ''; // Parte no númerica del valor de la propiedad del keyframe inicial y final con más caracteres (ya que esa es la medida que emplearemos al setear el estilo pues hay casos en los que no hace falta poner la unidad de medida como con el 0... esa parte no númerica no nos interesa)
+
+                // Se obtiene la parte no númerica con más caracteres
+                if (startUnit.length > endUnit.length) {
+                  unitSelected = singleStartData;
+                } else {
+                  unitSelected = endMultipleData[i];
+                }
+                // Se diferencia el cálculo del estilo en la animación para cuando es un color
+                if (startUnit.includes('#')) {
+                  // Se obtienen los colores primarios por separado en base 10
+                  const rgbStartValues = this.hexToRgb(singleStartData);
+                  const rgbEndValues = this.hexToRgb(endMultipleData[i]);
+
+                  precalcObj.values.push({
+                    redStartValue: rgbStartValues.r,
+                    redValueIncrement: rgbEndValues.r - rgbStartValues.r,
+                    greenStartValue: rgbStartValues.g,
+                    greenValueIncrement: rgbEndValues.g - rgbStartValues.g,
+                    blueStartValue: rgbStartValues.b,
+                    blueValueIncrement: rgbEndValues.b - rgbStartValues.b,
+                    isColor: true,
+                    unitSelected: unitSelected
+                  });
+                } else {
+                  if (endValueStr !== '' && startValueStr !== '') {
+                    precalcObj.values.push({
+                      startValue: startValue,
+                      valueIncrement: endValue - startValue,
+                      isColor: false,
+                      hasNumberValue: true,
+                      unitSelected: unitSelected
+                    });
+                  } else {
+                    precalcObj.values.push({
+                      hasNumberValue: false
+                    });
+                  }
+                }
+              });
+            }
+          } else {
+            precalcObj.hasNextKeyframe = false;
+
+          }
+          keyframeItem.preCalcs.push(precalcObj);
+        });
+      })
+    });
+
+  }
+
+
   // Metodo que se activa onScroll
   this.scrollAction = function () {
     // Se realizan las operaciones sobre el estilo para cada elemento 
@@ -149,146 +252,88 @@ var Keyframes = function (options) {
   this.setKeyframeStyles = function (keyframe, scroll) {
     const keyframeList = keyframe.keyframeList;
 
-    let startPointIndex = null; // Punto de inicio de una animación
-    let endPointIndex = null; // Punto final de una animación
-    let totalFramesAnimation = null; // Número total de frames de la animación
     let scrollTimeAnimation = null; // Posición del scroll relativa al intervalo de la animación
     let animationCurrentValue = null; // Valor actual del estilo en la animación
 
     // Se descarta que no haya más de un keyframe
     if (keyframeList?.length > 1) {
-      let propsArray = []; // Array que contendrá todas las propiedades de estilo que hay en todos los keyframes de este elemento
+      // let propsArray = []; // Array que contendrá todas las propiedades de estilo que hay en todos los keyframes de este elemento
       keyframe.element.removeAttribute("style"); // Se eliminan las reglas de estilo anteriormente añadidas a este elemento
 
-      // Se obtienen las todas las propiedades de todos los keyframes
-      keyframeList.forEach(keyframe => { propsArray.push(...Object.keys(keyframe).filter(prop => !propsArray.includes(prop) && prop != 'time')) });
-
       // Para cada propiedad existente en algún keyframe del elemento se realizan los cálculos de estilo
-      propsArray.forEach(k => {
-        startPointIndex = this.getStartPointIndex(keyframeList, k, scroll); // Se obtienen el keyframe anterior al momento actual para esta propiedad de estilo
-        endPointIndex = this.getEndPointIndex(keyframeList, k, scroll); // Se obtienen el keyframe posterior al momento actual para esta propiedad de estilo
-
-        // Se comprueba si esta propiedad de estilo en este momento del scroll tiene keyframes inicial y final
-        if (endPointIndex !== -1 && startPointIndex !== undefined && startPointIndex !== -1) {
-
-          // Se obtiene el valor de la propiedad de los keyframes incial y final
-          const startData = eval('keyframeList[startPointIndex].' + k);
-          const endData = eval('keyframeList[endPointIndex].' + k);
-
-          // Se evitan cálculos innecesarios si el valor inicial y final de la animación son iguales
-          if (startData === endData) {
-            eval('keyframe.element.style.' + k + '= startData');
-          } else {
-            const startMultipleData = startData.split(' '); // Con esta constante se comprueba si hay más de un valor
-            const endMultipleData = endData.split(' ');
-            
-            // Se comprueba si hay más de un valor para la regla de estilo (por ejemplo, transform: rotate(90deb) scale(1.5))
-            if (startMultipleData.length > 1) {
-              let finalValueMultiple = ''; // Se obtendrá la concatenación de los valores para regla de estilo
-
-              // Se realizan los cálculos oportunos para cada valor de la regla de estilo !! importante que los valores estén en el mismo orden en los keyframes
-              startMultipleData.forEach((singleStartData,i)=>{
-              // Se obtiene la parte no númerica del valor de la propiedad de los keyframes incial y final
-              const startUnit = singleStartData.replace(/\d|\./gi, '');
-              const endUnit = endMultipleData[i].replace(/\d|\./gi, '');
-              // Se obtiene el valor numérico de la propiedad de los keyframes incial y final
-              const startValueStr = singleStartData.replace(/[a-zA-Z]|#|\(|\)|\%/gi, '');
-              const endValueStr = endMultipleData[i].replace(/[a-zA-Z]|#|\(|\)|\%/gi, '');
-
-              let startValue = +startValueStr;
-              let endValue = +endValueStr;
-
-              let unitSelected = ''; // Parte no númerica del valor de la propiedad del keyframe inicial y final con más caracteres (ya que esa es la medida que emplearemos al setear el estilo pues hay casos en los que no hace falta poner la unidad de medida como con el 0... esa parte no númerica no nos interesa)
-
-              totalFramesAnimation = keyframeList[endPointIndex]?.time - keyframeList[startPointIndex]?.time; // Tiempo total del intervalo de animación
-              scrollTimeAnimation = scroll - keyframeList[startPointIndex]?.time; // Tiempo transcurrido desde el keyframe inicial (en este intervalo)
-
-              // Se obtiene la parte no númerica con más caracteres
-              if (startUnit.length > endUnit.length) {
-                unitSelected = singleStartData;
+      keyframeList.forEach(keyframeItem => {
+        if (keyframeItem.time <= scroll && keyframeItem.nextTime > scroll) {
+          keyframeItem.preCalcs.forEach(preCalc => {
+            // Se comprueba si esta propiedad de estilo en este momento del scroll tiene keyframes inicial y final
+            if (preCalc.hasNextKeyframe && preCalc.startTime <= scroll && preCalc.nextTime > scroll) {
+              // Se evitan cálculos innecesarios si el valor inicial y final de la animación son iguales
+              if (preCalc.noChangeValue) {
+                eval('keyframe.element.style.' + preCalc.propName + '= preCalc.initialValue');
               } else {
-                unitSelected = endMultipleData[i];
-              }
-              // Se diferencia el cálculo del estilo en la animación para cuando es un color
-              if (startUnit.includes('#')) {
-                // Se obtienen los colores primarios por separado en base 10
-                const rgbStartValues = this.hexToRgb(singleStartData);
-                const rgbEndValues = this.hexToRgb(endMultipleData[i]);
-                // Se calcula el color en base a la posición del scroll respecto a los keyframes
-                const redAnimationCurrentValue = ((rgbEndValues.r - rgbStartValues.r) / (totalFramesAnimation / scrollTimeAnimation)) + rgbStartValues.r;
-                const greenAnimationCurrentValue = ((rgbEndValues.g - rgbStartValues.g) / (totalFramesAnimation / scrollTimeAnimation)) + rgbStartValues.g;
-                const blueAnimationCurrentValue = ((rgbEndValues.b - rgbStartValues.b) / (totalFramesAnimation / scrollTimeAnimation)) + rgbStartValues.b;
-                const finalValueHex = this.rgbToHex(redAnimationCurrentValue, greenAnimationCurrentValue, blueAnimationCurrentValue);
-                finalValueMultiple += ' ' + finalValueHex;
-              } else {
-                if (endValueStr !== '' && startValueStr !== '') {
-                  
-                  // Aquí se hace el cálculo del valor de la animación basado en la posición del scroll
-                  animationCurrentValue = ((endValue - startValue) / (totalFramesAnimation / scrollTimeAnimation)) + startValue;
-                  
-                  animationCurrentValue = unitSelected.replace(/\d*\.?\d+/gi, animationCurrentValue); // Se obtiene la cadena a añadir en la regla de estilo
+                // Se comprueba si hay más de un valor para la regla de estilo (por ejemplo, transform: rotate(90deb) scale(1.5))
+                if (preCalc.multipleValue) {
+                  let finalValueMultiple = ''; // Se obtendrá la concatenación de los valores para regla de estilo
+
+                  // Se realizan los cálculos oportunos para cada valor de la regla de estilo !! importante que los valores estén en el mismo orden en los keyframes
+                  preCalc.values.forEach(valueObj => {
+                    scrollTimeAnimation = scroll - preCalc.startTime; // Tiempo transcurrido desde el keyframe inicial (en este intervalo)
+                    if (valueObj.isColor) {
+                      // Se calcula el color en base a la posición del scroll respecto a los keyframes
+                      const redAnimationCurrentValue = (valueObj.redValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.redStartValue;
+                      const greenAnimationCurrentValue = (valueObj.greenValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.greenStartValue;
+                      const blueAnimationCurrentValue = (valueObj.blueValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.blueStartValue;
+                      const finalValueHex = this.rgbToHex(redAnimationCurrentValue, greenAnimationCurrentValue, blueAnimationCurrentValue);
+                      finalValueMultiple += ' ' + finalValueHex;
+                    } else {
+                      if (valueObj.hasNumberValue) {
+
+                        // Aquí se hace el cálculo del valor de la animación basado en la posición del scroll
+                        animationCurrentValue = (valueObj.valueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.startValue;
+
+                        animationCurrentValue = valueObj.unitSelected.replace(/\d*\.?\d+/gi, animationCurrentValue); // Se obtiene la cadena a añadir en la regla de estilo
+                      } else {
+                        animationCurrentValue = valueObj.unitSelected;
+                      }
+
+                      finalValueMultiple += ' ' + animationCurrentValue;
+                      // Se añade la regla de estilo pertinente
+                    }
+                  });
+
+                  // Se añade la concatenación de valores a la regla de estilos
+                  eval('keyframe.element.style.' + preCalc.propName + '= finalValueMultiple');
+
                 } else {
-                  animationCurrentValue = singleStartData;
+                  let valueObj = preCalc.values[0];
+                  let finalValueMultiple = ''; // Se obtendrá la concatenación de los valores para regla de estilo
+                  scrollTimeAnimation = scroll - preCalc.startTime; // Tiempo transcurrido desde el keyframe inicial (en este intervalo)
+
+                  // Se diferencia el cálculo del estilo en la animación para cuando es un color
+                  if (valueObj.isColor) {
+                    // Se calcula el color en base a la posición del scroll respecto a los keyframes
+                    const redAnimationCurrentValue = (valueObj.redValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.redStartValue;
+                    const greenAnimationCurrentValue = (valueObj.greenValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.greenStartValue;
+                    const blueAnimationCurrentValue = (valueObj.blueValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.blueStartValue;
+                    const finalValueHex = this.rgbToHex(redAnimationCurrentValue, greenAnimationCurrentValue, blueAnimationCurrentValue);
+                    finalValueMultiple += ' ' + finalValueHex;
+                  } else {
+                    if (valueObj.hasNumberValue) {
+                      // Aquí se hace el cálculo del valor de la animación basado en la posición del scroll
+                      animationCurrentValue = (valueObj.valueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.startValue;
+                      animationCurrentValue = valueObj.unitSelected.replace(/\d*\.?\d+/gi, animationCurrentValue); // Se obtiene la cadena a añadir en la regla de estilo
+                    } else {
+                      animationCurrentValue = valueObj.unitSelected;
+                    }
+                    finalValueMultiple += ' ' + animationCurrentValue;
+                  }
+
+                  // Se añade la concatenación de valores a la regla de estilos
+                  eval('keyframe.element.style.' + preCalc.propName + '= finalValueMultiple');
                 }
-                
-                finalValueMultiple += ' ' + animationCurrentValue;
-                // Se añade la regla de estilo pertinente
+
               }
-            });
-
-            // Se añade la concatenación de valores a la regla de estilos
-            eval('keyframe.element.style.' + k + '= finalValueMultiple');
-            
-            } else {
-              // Se obtiene la parte no númerica del valor de la propiedad de los keyframes incial y final
-              const startUnit = startData.replace(/\d|\./gi, '');
-              const endUnit = endData.replace(/\d|\./gi, '');
-              // Se obtiene el valor numérico de la propiedad de los keyframes incial y final
-              const startValueStr = startData.replace(/[a-zA-Z]|#|\(|\)|\%/gi, '');
-              const endValueStr = endData.replace(/[a-zA-Z]|#|\(|\)|\%/gi, '');
-
-              let startValue = +startValueStr;
-              let endValue = +endValueStr;
-
-              let unitSelected = ''; // Parte no númerica del valor de la propiedad del keyframe inicial y final con más caracteres (ya que esa es la medida que emplearemos al setear el estilo pues hay casos en los que no hace falta poner la unidad de medida como con el 0... esa parte no númerica no nos interesa)
-
-              totalFramesAnimation = keyframeList[endPointIndex]?.time - keyframeList[startPointIndex]?.time; // Tiempo total del intervalo de animación
-              scrollTimeAnimation = scroll - keyframeList[startPointIndex]?.time; // Tiempo transcurrido desde el keyframe inicial (en este intervalo)
-
-              // Se obtiene la parte no númerica con más caracteres
-              if (startUnit.length > endUnit.length) {
-                unitSelected = startData;
-              } else {
-                unitSelected = endData;
-              }
-              // Se diferencia el cálculo del estilo en la animación para cuando es un color
-              if (startUnit.includes('#')) {
-                // Se obtienen los colores primarios por separado en base 10
-                const rgbStartValues = this.hexToRgb(startData);
-                const rgbEndValues = this.hexToRgb(endData);
-                // Se calcula el color en base a la posición del scroll respecto a los keyframes
-                const redAnimationCurrentValue = ((rgbEndValues.r - rgbStartValues.r) / (totalFramesAnimation / scrollTimeAnimation)) + rgbStartValues.r;
-                const greenAnimationCurrentValue = ((rgbEndValues.g - rgbStartValues.g) / (totalFramesAnimation / scrollTimeAnimation)) + rgbStartValues.g;
-                const blueAnimationCurrentValue = ((rgbEndValues.b - rgbStartValues.b) / (totalFramesAnimation / scrollTimeAnimation)) + rgbStartValues.b;
-                const finalValueHex = this.rgbToHex(redAnimationCurrentValue, greenAnimationCurrentValue, blueAnimationCurrentValue);
-                eval('keyframe.element.style.' + k + '= finalValueHex'); // Se añade el estilo calculado
-              } else {
-                if (endValueStr !== '' && startValueStr !== '') {
-
-                  // Aquí se hace el cálculo del valor de la animación basado en la posición del scroll
-                  animationCurrentValue = ((endValue - startValue) / (totalFramesAnimation / scrollTimeAnimation)) + startValue;
-
-                  animationCurrentValue = unitSelected.replace(/\d*\.?\d+/gi, animationCurrentValue); // Se obtiene la cadena a añadir en la regla de estilo
-                } else {
-                  animationCurrentValue = startData;
-                }
-                // Se añade la regla de estilo pertinente
-                eval('keyframe.element.style.' + k + '= animationCurrentValue');
-              }
-
             }
-
-          }
+          });
         }
       });
     }
@@ -348,8 +393,9 @@ var Keyframes = function (options) {
     });
     this.copyElementKeyframe();
     this.parseTimeUnit();
+    this.addCalculateRating();
     window.addEventListener('scroll', ev => this.scrollAction());
-    window.addEventListener('resize', ev => this.parseTimeUnit());
+    window.addEventListener('resize', ev => { this.parseTimeUnit(); this.addCalculateRating();this.scrollAction() });
     this.scrollAction();
   }
 
