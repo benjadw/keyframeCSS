@@ -32,7 +32,7 @@
 //       }
 //   ]
 // };
-
+var lastScroll;
 var Keyframes = function (options) {
   "use strict";
 
@@ -243,9 +243,14 @@ var Keyframes = function (options) {
 
 
   // Metodo que se activa onScroll
-  this.scrollAction = function () {
-    // Se realizan las operaciones sobre el estilo para cada elemento 
-    this.elementKeyframes.forEach(keyframe => this.setKeyframeStyles(keyframe, window.scrollY));
+  this.scrollAction = function (obj) {
+
+    if(lastScroll !== window.scrollY){
+      // Se realizan las operaciones sobre el estilo para cada elemento 
+      obj.elementKeyframes.forEach(keyframe => this.setKeyframeStyles(keyframe, window.scrollY));
+      lastScroll = window.scrollY;
+    }
+    window.requestAnimationFrame(()=>obj.scrollAction(obj));
   }
 
   // Este método es el que realiza el cambio de estilo para cada elemento en cada momento/scroll-position
@@ -394,12 +399,20 @@ var Keyframes = function (options) {
     this.copyElementKeyframe();
     this.parseTimeUnit();
     this.addCalculateRating();
-    window.addEventListener('scroll', ev => this.scrollAction());
-    window.addEventListener('resize', ev => { this.parseTimeUnit(); this.addCalculateRating();this.scrollAction() });
-    this.scrollAction();
+    window.requestAnimationFrame(()=>this.scrollAction(this));
+    window.addEventListener('resize', ev => { this.parseTimeUnit(); this.addCalculateRating() });
   }
 
   this.init();
+
+
+
+  (function() {
+    var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+                                window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+    window.requestAnimationFrame = requestAnimationFrame;
+  })();
+  
 
 };
 
