@@ -2,9 +2,7 @@
 let stylesStr = '';
 
 onmessage = function (oEvent) {
-  console.log(oEvent)
   data = JSON.parse(oEvent.data);
-  console.log(data);
   callWorker(data.elementKeyframes,data.scroll);
 };
 
@@ -100,7 +98,7 @@ setKeyframeStyles = function (keyframe, scroll) {
                   if (valueObj.hasNumberValue) {
                     // Aquí se hace el cálculo del valor de la animación basado en la posición del scroll
                     animationCurrentValue = (valueObj.valueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.startValue;
-                    animationCurrentValue = valueObj.unitSelected.replace(/\d*\.?\d+/gi, animationCurrentValue); // Se obtiene la cadena a añadir en la regla de estilo
+                    animationCurrentValue = valueObj.unitSelected.replace(/\-?\d*\.?\d+/gi, animationCurrentValue); // Se obtiene la cadena a añadir en la regla de estilo
                   } else {
                     animationCurrentValue = valueObj.unitSelected;
                   }
