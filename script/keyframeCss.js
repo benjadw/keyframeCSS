@@ -41,6 +41,9 @@ var Keyframes = function (options) {
   this.elementKeyframes = null; // Variable con los elementos que tienen keyframes asignados
   this.elementKeyframesCopy = null; // Variable con los elementos que tienen keyframes asignados
   this.keyframeList;
+  this.idCount = 0;
+  this.styleElem;
+  this.stylesStr = '';
 
   // Hace una copia de el objeto de los keyframes para no perder la información tras las conversiones de datos.
   this.copyElementKeyframe = function () {
@@ -129,8 +132,13 @@ var Keyframes = function (options) {
   // }
   this.addCalculateRating = function () {
     let propsArrayTemp = [];
+    this.styleElem = document.createElement('style');
+    this.idCount = 0;
+    document.body.appendChild(this.styleElem);
     this.elementKeyframes.forEach(keyframe => {
-      keyframe.keyframeList.forEach(keyframe => { propsArrayTemp.push(...Object.keys(keyframe).filter(prop => !propsArrayTemp.includes(prop) && prop != 'time'&& prop != 'nextTime'&& prop != 'preCalcs')) });
+      keyframe.element.classList.add('keyframeCSSId'+this.idCount);
+      this.idCount++;
+      keyframe.keyframeList.forEach(keyframe => { propsArrayTemp.push(...Object.keys(keyframe).filter(prop => !propsArrayTemp.includes(prop) && prop != 'time' && prop != 'nextTime' && prop != 'preCalcs')) });
       keyframe.keyframeList.forEach((keyframeItem, i) => {
         let startPointIndex;
         let endPointIndex;
@@ -152,15 +160,15 @@ var Keyframes = function (options) {
             precalcObj.startTime = keyframe.keyframeList[startPointIndex].time;
             precalcObj.nextTime = keyframe.keyframeList[endPointIndex].time;
             // Se obtiene el valor de la propiedad de los keyframes incial y final
-            const startData2 = eval('keyframe.keyframeList[startPointIndex].' + k);
-            const endData = eval('keyframe.keyframeList[endPointIndex].' + k);
+            const startData2 = keyframe.keyframeList[startPointIndex][k];
+            const endData = keyframe.keyframeList[endPointIndex][k];
 
             // Se evitan cálculos innecesarios si el valor inicial y final de la animación son iguales
             if (startData2 === endData) {
               precalcObj.noChangeValue = true;
               precalcObj.initialValue = startData2;
 
-              eval('keyframe.element.style.' + k + '= startData2');
+              keyframe.element.style[k] = startData2;
             } else {
               precalcObj.noChangeValue = false;
               const startMultipleData = startData2.split(' '); // Con esta constante se comprueba si hay más de un valor
@@ -245,12 +253,14 @@ var Keyframes = function (options) {
   // Metodo que se activa onScroll
   this.scrollAction = function (obj) {
 
-    if(lastScroll !== window.scrollY){
+    if (lastScroll !== window.scrollY) {
+      this.stylesStr = '';
       // Se realizan las operaciones sobre el estilo para cada elemento 
       obj.elementKeyframes.forEach(keyframe => this.setKeyframeStyles(keyframe, window.scrollY));
       lastScroll = window.scrollY;
+      this.styleElem.innerHTML = this.stylesStr;
     }
-    window.requestAnimationFrame(()=>obj.scrollAction(obj));
+    window.requestAnimationFrame(() => obj.scrollAction(obj));
   }
 
   // Este método es el que realiza el cambio de estilo para cada elemento en cada momento/scroll-position
@@ -262,8 +272,9 @@ var Keyframes = function (options) {
 
     // Se descarta que no haya más de un keyframe
     if (keyframeList?.length > 1) {
+      this.stylesStr += '.'+keyframe.element.className+'{';
       // let propsArray = []; // Array que contendrá todas las propiedades de estilo que hay en todos los keyframes de este elemento
-      keyframe.element.removeAttribute("style"); // Se eliminan las reglas de estilo anteriormente añadidas a este elemento
+      // keyframe.element.removeAttribute("style"); // Se eliminan las reglas de estilo anteriormente añadidas a este elemento
 
       // Para cada propiedad existente en algún keyframe del elemento se realizan los cálculos de estilo
       keyframeList.forEach(keyframeItem => {
@@ -273,7 +284,8 @@ var Keyframes = function (options) {
             if (preCalc.hasNextKeyframe && preCalc.startTime <= scroll && preCalc.nextTime > scroll) {
               // Se evitan cálculos innecesarios si el valor inicial y final de la animación son iguales
               if (preCalc.noChangeValue) {
-                eval('keyframe.element.style.' + preCalc.propName + '= preCalc.initialValue');
+                // keyframe.element.style[preCalc.propName] = preCalc.initialValue;
+                this.stylesStr += preCalc.propName +':'+preCalc.initialValue+' !important;';
               } else {
                 // Se comprueba si hay más de un valor para la regla de estilo (por ejemplo, transform: rotate(90deb) scale(1.5))
                 if (preCalc.multipleValue) {
@@ -306,7 +318,8 @@ var Keyframes = function (options) {
                   });
 
                   // Se añade la concatenación de valores a la regla de estilos
-                  eval('keyframe.element.style.' + preCalc.propName + '= finalValueMultiple');
+                  // keyframe.element.style[preCalc.propName] = finalValueMultiple;
+                  this.stylesStr += preCalc.propName + ':' + finalValueMultiple+' !important;';
 
                 } else {
                   let valueObj = preCalc.values[0];
@@ -333,7 +346,9 @@ var Keyframes = function (options) {
                   }
 
                   // Se añade la concatenación de valores a la regla de estilos
-                  eval('keyframe.element.style.' + preCalc.propName + '= finalValueMultiple');
+                  // keyframe.element.style[preCalc.propName] = finalValueMultiple;
+                  this.stylesStr += preCalc.propName + ':' + finalValueMultiple+' !important;';
+
                 }
 
               }
@@ -342,6 +357,7 @@ var Keyframes = function (options) {
         }
       });
     }
+    this.stylesStr += '}';
   }
 
   // Obtiene por separado los colores en base 10 a partir de la cadena hexadecimal
@@ -399,7 +415,7 @@ var Keyframes = function (options) {
     this.copyElementKeyframe();
     this.parseTimeUnit();
     this.addCalculateRating();
-    window.requestAnimationFrame(()=>this.scrollAction(this));
+    window.requestAnimationFrame(() => this.scrollAction(this));
     window.addEventListener('resize', ev => { this.parseTimeUnit(); this.addCalculateRating() });
   }
 
@@ -407,12 +423,12 @@ var Keyframes = function (options) {
 
 
 
-  (function() {
+  (function () {
     var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
-                                window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+      window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
     window.requestAnimationFrame = requestAnimationFrame;
   })();
-  
+
 
 };
 

@@ -26,7 +26,7 @@ function onLoad() {
                         left: '200px',
                         background: '#463311',
                         transform: 'scale(1.1)',
-                        fontSize: '6vh'
+                        "font-size": '6vh'
                     },
                     {
                         time: 90,
@@ -35,7 +35,7 @@ function onLoad() {
                         background: '#00ffff',
                         color: '#00ff00',
                         transform: 'scale(2)',
-                        fontSize: '8vh'
+                        "font-size": '8vh'
 
                     },
                     {
