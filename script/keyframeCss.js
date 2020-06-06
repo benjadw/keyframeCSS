@@ -26,7 +26,7 @@
 //           keyframeList: [ // List of keyframes for this element
 //               {
 //                   time: number; // Time the keyframe is set
-//                   [ruleStyleName]: string;// style rules like you use in javascript
+//                   [ruleStyleName]: string;// style rules like you use in css. Property as string if use "-".
 //               }
 //           ]
 //       }
@@ -36,6 +36,7 @@ var lastScroll;
 var Keyframes = function (options) {
   "use strict";
 
+  this.myWorker;
   this.timeType = 'pixels'; // Se establece si el tiempo de la animación se medirá en píxeles o en porcentaje
   this.size = 'auto'; // Se puede establecer el tamaño mínimo del body
   this.elementKeyframes = null; // Variable con los elementos que tienen keyframes asignados
@@ -132,11 +133,10 @@ var Keyframes = function (options) {
   // }
   this.addCalculateRating = function () {
     let propsArrayTemp = [];
-    this.styleElem = document.createElement('style');
     this.idCount = 0;
-    document.body.appendChild(this.styleElem);
     this.elementKeyframes.forEach(keyframe => {
       keyframe.element.classList.add('keyframeCSSId'+this.idCount);
+      keyframe.classList = 'keyframeCSSId'+this.idCount;
       this.idCount++;
       keyframe.keyframeList.forEach(keyframe => { propsArrayTemp.push(...Object.keys(keyframe).filter(prop => !propsArrayTemp.includes(prop) && prop != 'time' && prop != 'nextTime' && prop != 'preCalcs')) });
       keyframe.keyframeList.forEach((keyframeItem, i) => {
@@ -254,110 +254,12 @@ var Keyframes = function (options) {
   this.scrollAction = function (obj) {
 
     if (lastScroll !== window.scrollY) {
-      this.stylesStr = '';
-      // Se realizan las operaciones sobre el estilo para cada elemento 
-      obj.elementKeyframes.forEach(keyframe => this.setKeyframeStyles(keyframe, window.scrollY));
+      let workerData = {elementKeyframes: obj.elementKeyframes, scroll:window.scrollY};
+      // Se realizan las operaciones sobre el estilo en el worker
+      this.myWorker.postMessage(JSON.stringify(workerData));
       lastScroll = window.scrollY;
-      this.styleElem.innerHTML = this.stylesStr;
     }
     window.requestAnimationFrame(() => obj.scrollAction(obj));
-  }
-
-  // Este método es el que realiza el cambio de estilo para cada elemento en cada momento/scroll-position
-  this.setKeyframeStyles = function (keyframe, scroll) {
-    const keyframeList = keyframe.keyframeList;
-
-    let scrollTimeAnimation = null; // Posición del scroll relativa al intervalo de la animación
-    let animationCurrentValue = null; // Valor actual del estilo en la animación
-
-    // Se descarta que no haya más de un keyframe
-    if (keyframeList?.length > 1) {
-      this.stylesStr += '.'+keyframe.element.className+'{';
-      // let propsArray = []; // Array que contendrá todas las propiedades de estilo que hay en todos los keyframes de este elemento
-      // keyframe.element.removeAttribute("style"); // Se eliminan las reglas de estilo anteriormente añadidas a este elemento
-
-      // Para cada propiedad existente en algún keyframe del elemento se realizan los cálculos de estilo
-      keyframeList.forEach(keyframeItem => {
-        if (keyframeItem.time <= scroll && keyframeItem.nextTime > scroll) {
-          keyframeItem.preCalcs.forEach(preCalc => {
-            // Se comprueba si esta propiedad de estilo en este momento del scroll tiene keyframes inicial y final
-            if (preCalc.hasNextKeyframe && preCalc.startTime <= scroll && preCalc.nextTime > scroll) {
-              // Se evitan cálculos innecesarios si el valor inicial y final de la animación son iguales
-              if (preCalc.noChangeValue) {
-                // keyframe.element.style[preCalc.propName] = preCalc.initialValue;
-                this.stylesStr += preCalc.propName +':'+preCalc.initialValue+' !important;';
-              } else {
-                // Se comprueba si hay más de un valor para la regla de estilo (por ejemplo, transform: rotate(90deb) scale(1.5))
-                if (preCalc.multipleValue) {
-                  let finalValueMultiple = ''; // Se obtendrá la concatenación de los valores para regla de estilo
-
-                  // Se realizan los cálculos oportunos para cada valor de la regla de estilo !! importante que los valores estén en el mismo orden en los keyframes
-                  preCalc.values.forEach(valueObj => {
-                    scrollTimeAnimation = scroll - preCalc.startTime; // Tiempo transcurrido desde el keyframe inicial (en este intervalo)
-                    if (valueObj.isColor) {
-                      // Se calcula el color en base a la posición del scroll respecto a los keyframes
-                      const redAnimationCurrentValue = (valueObj.redValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.redStartValue;
-                      const greenAnimationCurrentValue = (valueObj.greenValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.greenStartValue;
-                      const blueAnimationCurrentValue = (valueObj.blueValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.blueStartValue;
-                      const finalValueHex = this.rgbToHex(redAnimationCurrentValue, greenAnimationCurrentValue, blueAnimationCurrentValue);
-                      finalValueMultiple += ' ' + finalValueHex;
-                    } else {
-                      if (valueObj.hasNumberValue) {
-
-                        // Aquí se hace el cálculo del valor de la animación basado en la posición del scroll
-                        animationCurrentValue = (valueObj.valueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.startValue;
-
-                        animationCurrentValue = valueObj.unitSelected.replace(/\d*\.?\d+/gi, animationCurrentValue); // Se obtiene la cadena a añadir en la regla de estilo
-                      } else {
-                        animationCurrentValue = valueObj.unitSelected;
-                      }
-
-                      finalValueMultiple += ' ' + animationCurrentValue;
-                      // Se añade la regla de estilo pertinente
-                    }
-                  });
-
-                  // Se añade la concatenación de valores a la regla de estilos
-                  // keyframe.element.style[preCalc.propName] = finalValueMultiple;
-                  this.stylesStr += preCalc.propName + ':' + finalValueMultiple+' !important;';
-
-                } else {
-                  let valueObj = preCalc.values[0];
-                  let finalValueMultiple = ''; // Se obtendrá la concatenación de los valores para regla de estilo
-                  scrollTimeAnimation = scroll - preCalc.startTime; // Tiempo transcurrido desde el keyframe inicial (en este intervalo)
-
-                  // Se diferencia el cálculo del estilo en la animación para cuando es un color
-                  if (valueObj.isColor) {
-                    // Se calcula el color en base a la posición del scroll respecto a los keyframes
-                    const redAnimationCurrentValue = (valueObj.redValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.redStartValue;
-                    const greenAnimationCurrentValue = (valueObj.greenValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.greenStartValue;
-                    const blueAnimationCurrentValue = (valueObj.blueValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.blueStartValue;
-                    const finalValueHex = this.rgbToHex(redAnimationCurrentValue, greenAnimationCurrentValue, blueAnimationCurrentValue);
-                    finalValueMultiple += ' ' + finalValueHex;
-                  } else {
-                    if (valueObj.hasNumberValue) {
-                      // Aquí se hace el cálculo del valor de la animación basado en la posición del scroll
-                      animationCurrentValue = (valueObj.valueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.startValue;
-                      animationCurrentValue = valueObj.unitSelected.replace(/\d*\.?\d+/gi, animationCurrentValue); // Se obtiene la cadena a añadir en la regla de estilo
-                    } else {
-                      animationCurrentValue = valueObj.unitSelected;
-                    }
-                    finalValueMultiple += ' ' + animationCurrentValue;
-                  }
-
-                  // Se añade la concatenación de valores a la regla de estilos
-                  // keyframe.element.style[preCalc.propName] = finalValueMultiple;
-                  this.stylesStr += preCalc.propName + ':' + finalValueMultiple+' !important;';
-
-                }
-
-              }
-            }
-          });
-        }
-      });
-    }
-    this.stylesStr += '}';
   }
 
   // Obtiene por separado los colores en base 10 a partir de la cadena hexadecimal
@@ -368,18 +270,6 @@ var Keyframes = function (options) {
       g: parseInt(result[2], 16),
       b: parseInt(result[3], 16)
     } : null;
-  }
-
-  // Transforma el valor de cada color a base hexadecimal
-  this.componentToHex = function (c) {
-    const a = Math.round(c);
-    var hex = a.toString(16);
-    return hex.length == 1 ? "0" + hex : hex;
-  }
-
-  // Devuelve el color completo en hexadecimal
-  this.rgbToHex = function (r, g, b) {
-    return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
   }
 
   // Obtiene el índice del keyframe inicial de esta animación, teniendo en cuenta el scroll actual y la propiedad a animar.
@@ -402,6 +292,12 @@ var Keyframes = function (options) {
 
   // Se inicializa la aplicación
   this.init = function () {
+    this.styleElem = document.createElement('style');
+    document.body.appendChild(this.styleElem);
+    this.myWorker = new Worker("../../script/keyframeCssWorker.js");
+    this.myWorker.addEventListener("message", oEvent => {
+      this.styleElem.innerHTML = oEvent.data;
+    }, false);
     this.size = options?.size;
     if (this.size !== undefined) {
       document.body.style.minHeight = this.size + 'px';
