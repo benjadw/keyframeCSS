@@ -26,7 +26,7 @@
 //           keyframeList: [ // List of keyframes for this element
 //               {
 //                   time: number; // Time the keyframe is set
-//                   [ruleStyleName]: string;// style rules like you use in javascript
+//                   [ruleStyleName]: string;// style rules like you use in css. Property as string if use "-".
 //               }
 //           ]
 //       }
