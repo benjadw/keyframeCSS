@@ -9,11 +9,6 @@
 
 
 
-
-// TODO: 
-
-// -QUE PASA CON BORDER (TIENE COLOR Y PIXELS EN LA MISMA PROPIEDAD)
-
 // MODEL options: 
 // {
 //   size?: number; // Set de min-height to the body
@@ -21,7 +16,7 @@
 //   elementKeyframes: [ // list of elements with keyframes
 //       {
 //           element: HTMLElement; // Add an html element
-//           elementOffset?: HTMLElement;
+//           elementOffset?: HTMLElement; // timeline from elementOffset position
 //
 //           keyframeList: [ // List of keyframes for this element
 //               {
@@ -135,8 +130,8 @@ var Keyframes = function (options) {
     let propsArrayTemp = [];
     this.idCount = 0;
     this.elementKeyframes.forEach(keyframe => {
-      keyframe.element.classList.add('keyframeCSSId'+this.idCount);
-      keyframe.classList = 'keyframeCSSId'+this.idCount;
+      keyframe.element.classList.add('keyframeCSSId' + this.idCount);
+      keyframe.classList = 'keyframeCSSId' + this.idCount;
       this.idCount++;
       keyframe.keyframeList.forEach(keyframe => { propsArrayTemp.push(...Object.keys(keyframe).filter(prop => !propsArrayTemp.includes(prop) && prop != 'time' && prop != 'nextTime' && prop != 'preCalcs')) });
       keyframe.keyframeList.forEach((keyframeItem, i) => {
@@ -171,8 +166,11 @@ var Keyframes = function (options) {
               keyframe.element.style[k] = startData2;
             } else {
               precalcObj.noChangeValue = false;
-              const startMultipleData = startData2.split(' '); // Con esta constante se comprueba si hay más de un valor
-              const endMultipleData = endData.split(' ');
+              debugger;
+              const startData2Temp = startData2.replace(/(\s|,)/gi,'&$1');
+              const endMultipleDataTemp = endData.replace(/(\s|,)/gi,'&$1');
+              const startMultipleData = startData2Temp.split('&'); // Con esta constante se comprueba si hay más de un valor
+              const endMultipleData = endMultipleDataTemp.split('&');
 
               totalFramesAnimation = keyframe.keyframeList[endPointIndex]?.time - keyframe.keyframeList[startPointIndex]?.time; // Tiempo total del intervalo de animación
               precalcObj.totalFramesAnimation = totalFramesAnimation;
@@ -188,11 +186,11 @@ var Keyframes = function (options) {
               // Se realizan los cálculos oportunos para cada valor de la regla de estilo !! importante que los valores estén en el mismo orden en los keyframes
               startMultipleData.forEach((singleStartData, i) => {
                 // Se obtiene la parte no númerica del valor de la propiedad de los keyframes incial y final
-                const startUnit = singleStartData.replace(/\d|\./gi, '');
-                const endUnit = endMultipleData[i].replace(/\d|\./gi, '');
+                const startUnit = singleStartData.replace(/\d(?!d)|\./gi, '');
+                const endUnit = endMultipleData[i].replace(/\d(?!d)|\./gi, '');
                 // Se obtiene el valor numérico de la propiedad de los keyframes incial y final
-                const startValueStr = singleStartData.replace(/[a-zA-Z]|#|\(|\)|\%/gi, '');
-                const endValueStr = endMultipleData[i].replace(/[a-zA-Z]|#|\(|\)|\%/gi, '');
+                const startValueStr = singleStartData.replace(/[a-zA-Z]|#|\(|\)|\%|\d(?=d\()|\s|,/gi, '');
+                const endValueStr = endMultipleData[i].replace(/[a-zA-Z]|#|\(|\)|\%|\d(?=d\()|\s|,/gi, '');
 
                 let startValue = +startValueStr;
                 let endValue = +endValueStr;
@@ -232,7 +230,8 @@ var Keyframes = function (options) {
                     });
                   } else {
                     precalcObj.values.push({
-                      hasNumberValue: false
+                      hasNumberValue: false,
+                      unitSelected: unitSelected
                     });
                   }
                 }
@@ -254,7 +253,7 @@ var Keyframes = function (options) {
   this.scrollAction = function (obj) {
 
     if (lastScroll !== window.scrollY) {
-      let workerData = {elementKeyframes: obj.elementKeyframes, scroll:window.scrollY};
+      let workerData = { elementKeyframes: obj.elementKeyframes, scroll: window.scrollY };
       // Se realizan las operaciones sobre el estilo en el worker
       this.myWorker.postMessage(JSON.stringify(workerData));
       lastScroll = window.scrollY;
@@ -264,6 +263,7 @@ var Keyframes = function (options) {
 
   // Obtiene por separado los colores en base 10 a partir de la cadena hexadecimal
   this.hexToRgb = function (hex) {
+    hex = hex.replace(/(\s|,)/gi,'');
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
       r: parseInt(result[1], 16),

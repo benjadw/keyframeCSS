@@ -3,7 +3,7 @@ let stylesStr = '';
 
 onmessage = function (oEvent) {
   data = JSON.parse(oEvent.data);
-  callWorker(data.elementKeyframes,data.scroll);
+  callWorker(data.elementKeyframes, data.scroll);
 };
 
 
@@ -34,7 +34,7 @@ setKeyframeStyles = function (keyframe, scroll) {
 
   let scrollTimeAnimation = null; // Posición del scroll relativa al intervalo de la animación
   let animationCurrentValue = null; // Valor actual del estilo en la animación
-
+  debugger
   // Se descarta que no haya más de un keyframe
   if (keyframeList?.length > 1) {
     stylesStr += '.' + keyframe.classList + '{';
@@ -48,12 +48,12 @@ setKeyframeStyles = function (keyframe, scroll) {
             if (preCalc.noChangeValue) {
               stylesStr += preCalc.propName + ':' + preCalc.initialValue + ' !important;';
             } else {
-              // Se comprueba si hay más de un valor para la regla de estilo (por ejemplo, transform: rotate(90deb) scale(1.5))
+              // Se comprueba si hay más de un valor para la regla de estilo (por ejemplo, transform: rotate(90deg) scale(1.5))
               if (preCalc.multipleValue) {
                 let finalValueMultiple = ''; // Se obtendrá la concatenación de los valores para regla de estilo
 
                 // Se realizan los cálculos oportunos para cada valor de la regla de estilo !! importante que los valores estén en el mismo orden en los keyframes
-                preCalc.values.forEach(valueObj => {
+                preCalc.values.forEach((valueObj, i) => {
                   scrollTimeAnimation = scroll - preCalc.startTime; // Tiempo transcurrido desde el keyframe inicial (en este intervalo)
                   if (valueObj.isColor) {
                     // Se calcula el color en base a la posición del scroll respecto a los keyframes
@@ -61,19 +61,19 @@ setKeyframeStyles = function (keyframe, scroll) {
                     const greenAnimationCurrentValue = (valueObj.greenValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.greenStartValue;
                     const blueAnimationCurrentValue = (valueObj.blueValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.blueStartValue;
                     const finalValueHex = rgbToHex(redAnimationCurrentValue, greenAnimationCurrentValue, blueAnimationCurrentValue);
-                    finalValueMultiple += ' ' + finalValueHex;
+                    finalValueMultiple += finalValueHex;
                   } else {
                     if (valueObj.hasNumberValue) {
 
                       // Aquí se hace el cálculo del valor de la animación basado en la posición del scroll
                       animationCurrentValue = (valueObj.valueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.startValue;
 
-                      animationCurrentValue = valueObj.unitSelected.replace(/\d*\.?\d+/gi, animationCurrentValue); // Se obtiene la cadena a añadir en la regla de estilo
+                      animationCurrentValue = valueObj.unitSelected.replace(/\d(?!d)*\.?\d+/gi, animationCurrentValue); // Se obtiene la cadena a añadir en la regla de estilo
                     } else {
                       animationCurrentValue = valueObj.unitSelected;
                     }
 
-                    finalValueMultiple += ' ' + animationCurrentValue;
+                    finalValueMultiple += animationCurrentValue ;
                     // Se añade la regla de estilo pertinente
                   }
                 });
@@ -93,8 +93,9 @@ setKeyframeStyles = function (keyframe, scroll) {
                   const greenAnimationCurrentValue = (valueObj.greenValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.greenStartValue;
                   const blueAnimationCurrentValue = (valueObj.blueValueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.blueStartValue;
                   const finalValueHex = rgbToHex(redAnimationCurrentValue, greenAnimationCurrentValue, blueAnimationCurrentValue);
-                  finalValueMultiple += ' ' + finalValueHex;
+                  finalValueMultiple += finalValueHex;
                 } else {
+
                   if (valueObj.hasNumberValue) {
                     // Aquí se hace el cálculo del valor de la animación basado en la posición del scroll
                     animationCurrentValue = (valueObj.valueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.startValue;
@@ -102,7 +103,7 @@ setKeyframeStyles = function (keyframe, scroll) {
                   } else {
                     animationCurrentValue = valueObj.unitSelected;
                   }
-                  finalValueMultiple += ' ' + animationCurrentValue;
+                  finalValueMultiple += animationCurrentValue;
                 }
 
                 // Se añade la concatenación de valores a la regla de estilos

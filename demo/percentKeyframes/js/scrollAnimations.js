@@ -21,30 +21,56 @@ function onLoad() {
                 keyframeList: [
                     {
                         time: 0,
-                        top: '200px',
-                        color: '#ff0000',
-                        left: '200px',
-                        background: '#463311',
-                        transform: 'scale(1.1)',
-                        "font-size": '6vh'
+                        // top: '200px',
+                        // color: '#ff0000',
+                        // left: '200px',
+                        // background: '#463311',
+                        // transform: 'scale(1.1)',
+                        // "font-size": '6vh',
+                        // border: '10px solid #000000'
+                        transform: "perspective(500px) translate3d(0,0,0) rotate3d(1,0,0,0deg)",
+                        // padding: '10px 10px 10px'
+                        position: 'fixed',
+                        top:'100px',
+                        left: '500px',
+                        "z-index": '100'
                     },
                     {
-                        time: 90,
-                        top: '100px',
+                        time: 100,
+                        // top: '100px',
+                        // left: '500px',
+                        // background: '#00ffff',
+                        // color: '#00ff00',
+                        // transform: 'scale(2)',
+                        // "font-size": '8vh',
+                        // border: '100px solid #ffffff'
+                        transform: "perspective(500px) translate3d(10px,0px,400px) rotate3d(1,0,0,960deg)",
+                        // padding: '100px 100px 100px'
+                        position:'fixed',
+                        top:'100px',
                         left: '500px',
-                        background: '#00ffff',
-                        color: '#00ff00',
-                        transform: 'scale(2)',
-                        "font-size": '8vh'
+                        "z-index": '100'
 
                     },
                     {
-                        time: 80,
-                        top: '300px',
-                        color: '#0000ff',
-                        background: '#cccccc',
-                        transform: 'scale(1.5)'
+                        time: 50,
+                        // top: '100px',
+                        // left: '500px',
+                        // background: '#00ffff',
+                        // color: '#00ff00',
+                        // transform: 'scale(2)',
+                        // "font-size": '8vh',
+                        // border: '100px solid #ffffff'
+                        transform: "perspective(500px) translate3d(10px,0px,400px) rotate3d(1,0,0,480deg)",
+                        // padding: '100px 100px 100px'
                     }
+                    // {
+                        // time: 80,
+                        // top: '300px',
+                        // color: '#0000ff',
+                        // background: '#cccccc',
+                        // transform: 'scale(1.5)'
+                    // }
                 ]
             },
             {
@@ -57,7 +83,8 @@ function onLoad() {
                         color: '#000000',
                         left: '0',
                         transform: 'rotate(0)',
-                        position: 'fixed'
+                        position: 'fixed',
+                        background: '#008800'
                     },
                     {
                         time: 100,
@@ -87,7 +114,7 @@ function onLoad() {
                         top: '60%',
                         background: '#ffff00',
                         left: '0',
-                        transform: 'rotate(0)',
+                        transform: 'rotate(0) scale(1)',
                         position: 'fixed'
                     },
                     {
@@ -115,7 +142,7 @@ function onLoad() {
                         color: '#ffffff',
                         background: '#ffff00',
                         position: 'fixed',
-                        transform: 'rotate(540deg) scale(.1)'
+                        transform: 'rotate(540deg) scale(0.1)'
                     },
                     {
                         time: 100,
@@ -124,7 +151,7 @@ function onLoad() {
                         color: '#ffffff',
                         background: '#ffff00',
                         position: 'fixed',
-                        transform: 'rotate(740deg) scale(.01)'
+                        transform: 'rotate(740deg) scale(0.01)'
                     }
                 ]
             },
@@ -136,7 +163,7 @@ function onLoad() {
                         top: '70%',
                         background: '#ff0000',
                         left: '0',
-                        transform: 'rotate(0)',
+                        transform: 'rotate(0) scale(1)',
                         position: 'fixed'
                     },
                     {
@@ -164,7 +191,7 @@ function onLoad() {
                         color: '#ffffff',
                         background: '#ff0000',
                         position: 'fixed',
-                        transform: 'rotate(540deg) scale(.1)'
+                        transform: 'rotate(540deg) scale(0.1)'
                     },
                     {
                         time: 100,
@@ -173,7 +200,7 @@ function onLoad() {
                         color: '#ffffff',
                         background: '#ff0000',
                         position: 'fixed',
-                        transform: 'rotate(740deg) scale(.01)'
+                        transform: 'rotate(740deg) scale(0.01)'
                     }
                 ]
             },
@@ -185,7 +212,7 @@ function onLoad() {
                         top: '90%',
                         background: '#00ff00',
                         left: '0',
-                        transform: 'rotate(0)',
+                        transform: 'rotate(0) scale(1)',
                         position: 'fixed'
                     },
                     {
@@ -194,8 +221,6 @@ function onLoad() {
                         left: '0',
                         color: '#ffffff',
                         background: '#00ff00',
-                        position: 'fixed'
-
                     },
                     {
                         time: 50,
@@ -203,7 +228,6 @@ function onLoad() {
                         left: '0',
                         color: '#ffffff',
                         background: '#00ff00',
-                        position: 'fixed',
                         transform: 'rotate(0) scale(1)'
                     },
                     {
@@ -212,8 +236,7 @@ function onLoad() {
                         left: '0',
                         color: '#ffffff',
                         background: '#00ff00',
-                        position: 'fixed',
-                        transform: 'rotate(540deg) scale(.1)'
+                        transform: 'rotate(540deg) scale(0.1)'
                     },
                     {
                         time: 100,
@@ -222,7 +245,7 @@ function onLoad() {
                         color: '#ffffff',
                         background: '#00ff00',
                         position: 'fixed',
-                        transform: 'rotate(740deg) scale(.01)'
+                        transform: 'rotate(740deg) scale(0.01)'
                     }
                 ]
             }
