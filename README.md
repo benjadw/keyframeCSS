@@ -4,7 +4,7 @@ Last stable release (v1)
 
 
 #### Description:
-Make animations binding keyframes with the position of the page scroll.
+Make animations binding keyframes with the page scroll position.
 
 
 
@@ -24,21 +24,21 @@ var keyframes = new Keyframes({
         elementKeyframes: [ // Array of elements with keyframes
             {
                 element: exampleElement1, // Add an element to animate
-								elementOffset: exampleElement3, //Optional: You can specify that the keyframes start from this element position on page.
+		elementOffset: exampleElement3, //Optional: You can specify that the keyframes start from this element position on page.
                 keyframeList: [ // Array of element keyframes
                     {
                         time: 0, // Position in the scroll for the keyframe
                         top: '200px', // Add styles for this keyframes as string
                         color: '#ff0000',
                         left: '200px',
-                        background: '#463311',
+                        'background-color': '#463311',
                         transform: 'scale(1.1)'
                     },
                     {
                         time: 15000,
                         top: '100px',
                         left: '500px',
-                        background: '#00ffff',
+                        'background-color': '#00ffff',
                         color: '#00ff00',
                         transform: 'scale(2)'
                         
@@ -47,7 +47,7 @@ var keyframes = new Keyframes({
                         time: 3000,
                         top: '300px',
                         color: '#0000ff',
-                        background: '#cccccc',
+                        'background-color': '#cccccc',
                         transform: 'scale(1.5)'
                     }
                 ]
