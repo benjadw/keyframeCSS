@@ -166,7 +166,6 @@ var Keyframes = function (options) {
               keyframe.element.style[k] = startData2;
             } else {
               precalcObj.noChangeValue = false;
-              debugger;
               const startData2Temp = startData2.replace(/(\s|,)/gi,'&$1');
               const endMultipleDataTemp = endData.replace(/(\s|,)/gi,'&$1');
               const startMultipleData = startData2Temp.split('&'); // Con esta constante se comprueba si hay más de un valor
@@ -294,7 +293,7 @@ var Keyframes = function (options) {
   this.init = function () {
     this.styleElem = document.createElement('style');
     document.body.appendChild(this.styleElem);
-    this.myWorker = new Worker("../../script/keyframeCssWorker.js");
+    this.myWorker = new Worker("/keyframeCSS/keyframeCssWorker.js");
     this.myWorker.addEventListener("message", oEvent => {
       this.styleElem.innerHTML = oEvent.data;
     }, false);

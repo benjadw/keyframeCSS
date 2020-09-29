@@ -34,7 +34,6 @@ setKeyframeStyles = function (keyframe, scroll) {
 
   let scrollTimeAnimation = null; // Posición del scroll relativa al intervalo de la animación
   let animationCurrentValue = null; // Valor actual del estilo en la animación
-  debugger
   // Se descarta que no haya más de un keyframe
   if (keyframeList?.length > 1) {
     stylesStr += '.' + keyframe.classList + '{';

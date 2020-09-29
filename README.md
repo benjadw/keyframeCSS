@@ -10,12 +10,22 @@ Make animations binding keyframes with the page scroll position.
 
 ## Installation
 
-####  Add script in <head>:
-<script src="/js/keyframeCss.js"></script>
+####  Add folder keyframeCSS in the root of your web with this two files:
+`keyframeCSS/keyframeCss.js`
+
+`keyframeCSS/keyframeCssWorker.js`
+
+
+
+####  Add scripts inside the `<head>` tag:
+`<script src="/keyframeCSS/keyframeCss.js"></script>`
+
+`<script src="/js/fileConfExample.js"></script>`
+
 
 ## How to use it?
 #### Generate configuration object (example):
-
+This file must be imported with the script tag after the library importation.
 ```
 var keyframes = new Keyframes({
         size: 18000, // Optional: Set min-height to de body element
