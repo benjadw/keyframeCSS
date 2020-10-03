@@ -163,7 +163,7 @@ var Keyframes = function (options) {
               precalcObj.noChangeValue = true;
               precalcObj.initialValue = startData2;
 
-              keyframe.element.style[k] = startData2;
+              // keyframe.element.style[k] = startData2; TODO: COMPROBAR SI HAY QUE QUITARLO
             } else {
               precalcObj.noChangeValue = false;
               const startData2Temp = startData2.replace(/(\s|,)/gi,'&$1');
