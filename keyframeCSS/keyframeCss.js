@@ -185,8 +185,8 @@ var Keyframes = function (options) {
               // Se realizan los cálculos oportunos para cada valor de la regla de estilo !! importante que los valores estén en el mismo orden en los keyframes
               startMultipleData.forEach((singleStartData, i) => {
                 // Se obtiene la parte no númerica del valor de la propiedad de los keyframes incial y final
-                const startUnit = singleStartData.replace(/\d(?!d)|\./gi, '');
-                const endUnit = endMultipleData[i].replace(/\d(?!d)|\./gi, '');
+                const startUnit = singleStartData.replace(/\d(?!d)|\.|-/gi, '');
+                const endUnit = endMultipleData[i].replace(/\d(?!d)|\.|-/gi, '');
                 // Se obtiene el valor numérico de la propiedad de los keyframes incial y final
                 const startValueStr = singleStartData.replace(/[a-zA-Z]|#|\(|\)|\%|\d(?=d\()|\s|,/gi, '');
                 const endValueStr = endMultipleData[i].replace(/[a-zA-Z]|#|\(|\)|\%|\d(?=d\()|\s|,/gi, '');
