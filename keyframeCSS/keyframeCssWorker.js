@@ -67,7 +67,7 @@ setKeyframeStyles = function (keyframe, scroll) {
                       // Aquí se hace el cálculo del valor de la animación basado en la posición del scroll
                       animationCurrentValue = (valueObj.valueIncrement / (preCalc.totalFramesAnimation / scrollTimeAnimation)) + valueObj.startValue;
 
-                      animationCurrentValue = valueObj.unitSelected.replace(/\d(?!d)*\.?\d+/gi, animationCurrentValue); // Se obtiene la cadena a añadir en la regla de estilo
+                      animationCurrentValue = valueObj.unitSelected.replace(/\-?\d(?!d)*\.?\d+/gi, animationCurrentValue); // Se obtiene la cadena a añadir en la regla de estilo
                     } else {
                       animationCurrentValue = valueObj.unitSelected;
                     }
