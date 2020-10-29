@@ -9,7 +9,7 @@
 
 
 
-// MODEL options: 
+// MODEL this.options: 
 // {
 //   size?: number; // Set de min-height to the body
 //   timeType?: string; // Set keyframes time unit ('pixels', 'percent')
@@ -40,6 +40,7 @@ var Keyframes = function (options) {
   this.idCount = 0;
   this.styleElem;
   this.stylesStr = '';
+  this.options;
 
   // Hace una copia de el objeto de los keyframes para no perder la información tras las conversiones de datos.
   this.copyElementKeyframe = function () {
@@ -59,11 +60,11 @@ var Keyframes = function (options) {
     let noPercent = 0;
     let noPixels = 0;
     let elementOffsetExtraTime = 0;
-    if (options.timeLine && options.timeLine === 'bottom') {
+    if (this.options.timeLine && this.options.timeLine === 'bottom') {
       extraTimeBottomTimeLine = -window.innerHeight;
     }
 
-    if (options.timeType && options.timeType !== 'percent') {
+    if (this.options.timeType && this.options.timeType !== 'percent') {
       noPercent = 0;
       noPixels = 1;
     } else {
@@ -163,7 +164,7 @@ var Keyframes = function (options) {
               precalcObj.noChangeValue = true;
               precalcObj.initialValue = startData2;
 
-              // keyframe.element.style[k] = startData2; TODO: COMPROBAR SI HAY QUE QUITARLO
+              // keyframe.element.style[k] = startData2; COMPROBAR SI ESTO ES NECESARIO
             } else {
               precalcObj.noChangeValue = false;
               const startData2Temp = startData2.replace(/(\s|,)/gi,'&$1');
@@ -290,19 +291,24 @@ var Keyframes = function (options) {
   }
 
   // Se inicializa la aplicación
-  this.init = function () {
+  this.init = function (resetOptions = null) {
+    if(resetOptions === null){
+      this.options = options;
+    }else{
+      this.options = resetOptions;
+    }
     this.styleElem = document.createElement('style');
     document.body.appendChild(this.styleElem);
     this.myWorker = new Worker("/keyframeCSS/keyframeCssWorker.js");
     this.myWorker.addEventListener("message", oEvent => {
       this.styleElem.innerHTML = oEvent.data;
     }, false);
-    this.size = options?.size;
+    this.size = this.options?.size;
     if (this.size !== undefined) {
       document.body.style.minHeight = this.size + 'px';
     }
-    this.timeType = options?.timeType ? options.timeType : 'pixels';
-    this.elementKeyframes = options.elementKeyframes;
+    this.timeType = this.options?.timeType ? this.options.timeType : 'pixels';
+    this.elementKeyframes = this.options.elementKeyframes;
 
     this.elementKeyframes.forEach(keyframe => {
       keyframe.keyframeList = keyframe.keyframeList.sort(this.sortKeyframes); // Se ordenan los keyframes para facilitar la obtención de los intervalos de animación    });
