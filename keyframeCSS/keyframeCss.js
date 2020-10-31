@@ -299,7 +299,8 @@ var Keyframes = function (options) {
     }
     this.styleElem = document.createElement('style');
     document.body.appendChild(this.styleElem);
-    this.myWorker = new Worker("/keyframeCSS/keyframeCssWorker.js");
+    const href = location.href.replace(/\/index\.html.*/gi,'');
+    this.myWorker = new Worker(href + "/keyframeCSS/keyframeCssWorker.js");
     this.myWorker.addEventListener("message", oEvent => {
       this.styleElem.innerHTML = oEvent.data;
     }, false);
